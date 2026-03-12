@@ -5,11 +5,13 @@ import { CountdownWidget } from '@/components/countdown-widget';
 import { BrainCircuit, Loader2 } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getSyllabusFlatList } from '@/lib/syllabus';
+import { GoogleGenAI } from '@google/genai';
 
 export default function Home() {
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasScores, setHasScores] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAnalysis() {
@@ -32,6 +34,7 @@ export default function Home() {
       }
 
       setIsLoading(true);
+      setError(null);
       try {
         const allFocus = await db.getAll('focus');
         const flatSyllabus = getSyllabusFlatList();
@@ -49,20 +52,33 @@ export default function Home() {
           level: f.level
         }));
 
-        const res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scores: mappedScores, focus: mappedFocus })
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+
+        const prompt = `
+          You are an expert tutor for the UGC NET JRF examination.
+          Analyze the student's current progress based on their test scores and focus areas.
+          
+          Scores data: ${JSON.stringify(mappedScores)}
+          Focus areas: ${JSON.stringify(mappedFocus)}
+          
+          Provide a concise, encouraging, and actionable analysis (max 3 paragraphs).
+          Identify 2-3 specific topics they should focus on next, considering their low scores and high focus marks.
+          Do not use markdown formatting like bold or headers, just plain text paragraphs.
+        `;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.1-pro-preview',
+          contents: prompt,
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setAnalysis(data.analysis);
-          await db.put('keyval', data.analysis, 'ai-analysis');
+        if (response.text) {
+          setAnalysis(response.text);
+          await db.put('keyval', response.text, 'ai-analysis');
           await db.put('keyval', today, 'ai-analysis-date');
         }
-      } catch (e) {
-        console.error(e);
+      } catch (e: any) {
+        console.error('AI Analysis Error:', e);
+        setError(e.message || 'Failed to generate analysis');
       } finally {
         setIsLoading(false);
       }
@@ -99,6 +115,11 @@ export default function Home() {
             ) : isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+              </div>
+            ) : error ? (
+              <div className="text-sm text-red-500">
+                <p>Failed to load AI analysis.</p>
+                <p className="text-xs mt-1 opacity-70">{error}</p>
               </div>
             ) : (
               <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
