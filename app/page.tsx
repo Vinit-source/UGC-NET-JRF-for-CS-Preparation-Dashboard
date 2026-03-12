@@ -5,13 +5,11 @@ import { CountdownWidget } from '@/components/countdown-widget';
 import { BrainCircuit, Loader2 } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getSyllabusFlatList } from '@/lib/syllabus';
-import { GoogleGenAI } from '@google/genai';
 
 export default function Home() {
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasScores, setHasScores] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAnalysis() {
@@ -34,7 +32,6 @@ export default function Home() {
       }
 
       setIsLoading(true);
-      setError(null);
       try {
         const allFocus = await db.getAll('focus');
         const flatSyllabus = getSyllabusFlatList();
@@ -52,10 +49,18 @@ export default function Home() {
           level: f.level
         }));
 
-        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+        const apiKey = localStorage.getItem('GEMINI_API_KEY_PRIMARY') || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+        if (!apiKey) {
+          setAnalysis('API Key not found. Please add your Gemini API Key in the Settings page.');
+          setIsLoading(false);
+          return;
+        }
+
+        const { GoogleGenAI } = await import('@google/genai');
+        const ai = new GoogleGenAI({ apiKey });
 
         const prompt = `
-          You are an expert tutor for the UGC NET JRF examination.
+          You are an expert, highly motivating tutor and mentor for the UGC NET JRF examination.
           Analyze the student's current progress based on their test scores and focus areas.
           
           Scores data: ${JSON.stringify(mappedScores)}
@@ -63,7 +68,9 @@ export default function Home() {
           
           Provide a concise, encouraging, and actionable analysis (max 3 paragraphs).
           Identify 2-3 specific topics they should focus on next, considering their low scores and high focus marks.
-          Do not use markdown formatting like bold or headers, just plain text paragraphs.
+          Include a motivating persona, and end with one inspiring quote from a great successful person.
+          Include emojis in your response to make it lively and engaging! 🚀✨
+          Do not use markdown formatting like bold or headers, just plain text paragraphs separated by newlines.
         `;
 
         const response = await ai.models.generateContent({
@@ -76,9 +83,9 @@ export default function Home() {
           await db.put('keyval', response.text, 'ai-analysis');
           await db.put('keyval', today, 'ai-analysis-date');
         }
-      } catch (e: any) {
-        console.error('AI Analysis Error:', e);
-        setError(e.message || 'Failed to generate analysis');
+      } catch (e) {
+        console.error(e);
+        setAnalysis('Failed to generate analysis. Please check your API key or try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -115,11 +122,6 @@ export default function Home() {
             ) : isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-              </div>
-            ) : error ? (
-              <div className="text-sm text-red-500">
-                <p>Failed to load AI analysis.</p>
-                <p className="text-xs mt-1 opacity-70">{error}</p>
               </div>
             ) : (
               <div className="space-y-4 text-sm text-slate-700 leading-relaxed">

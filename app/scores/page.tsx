@@ -9,23 +9,23 @@ import { Plus, Save, Target } from 'lucide-react';
 export default function ScoresPage() {
   const [scores, setScores] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [flatSyllabus, setFlatSyllabus] = useState<SyllabusItem[]>([]);
+  const [flatSyllabus] = useState<SyllabusItem[]>(() => getSyllabusFlatList());
 
   // Form state
   const [targetId, setTargetId] = useState('');
   const [score, setScore] = useState('');
   const [maxScore, setMaxScore] = useState('');
 
-  useEffect(() => {
-    setFlatSyllabus(getSyllabusFlatList());
-    loadScores();
-  }, []);
-
   const loadScores = async () => {
     const db = await getDB();
     const allScores = await db.getAll('scores');
     setScores(allScores.sort((a, b) => b.date - a.date));
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadScores();
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

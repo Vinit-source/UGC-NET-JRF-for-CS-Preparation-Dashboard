@@ -12,17 +12,12 @@ import 'react-day-picker/dist/style.css';
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [journalContent, setJournalContent] = useState('');
-  const [flatSyllabus, setFlatSyllabus] = useState<SyllabusItem[]>([]);
+  const [flatSyllabus] = useState<SyllabusItem[]>(() => getSyllabusFlatList());
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [tagQuery, setTagQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const [journalEntries, setJournalEntries] = useState<any[]>([]);
   const [scheduledItems, setScheduledItems] = useState<any[]>([]);
-
-  useEffect(() => {
-    setFlatSyllabus(getSyllabusFlatList());
-    loadData(selectedDate);
-  }, [selectedDate]);
 
   const loadData = async (date: Date) => {
     const db = await getDB();
@@ -37,6 +32,11 @@ export default function CalendarPage() {
     const daySchedules = allSchedules.filter(s => s.date >= startOfDay && s.date <= endOfDay);
     setScheduledItems(daySchedules);
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData(selectedDate);
+  }, [selectedDate]);
 
   const handleJournalChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;

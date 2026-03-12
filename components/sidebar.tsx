@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, List, Target, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, List, Target, CalendarDays, Settings, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { name: 'Syllabus Tracker', href: '/syllabus', icon: List },
   { name: 'Scores', href: '/scores', icon: Target },
   { name: 'Calendar & Journal', href: '/calendar', icon: CalendarDays },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -40,6 +41,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="p-4 mt-auto border-t border-slate-200">
+        <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-100 p-3 rounded-lg">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+          <p>
+            <strong className="font-semibold text-slate-700 block mb-0.5">Privacy First</strong>
+            Your data is stored safely on your computer.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -8,9 +8,13 @@ import { Calendar as CalendarIcon, Edit2, Check } from 'lucide-react';
 export function CountdownWidget() {
   const [targetDate, setTargetDate] = useState<string>('2026-06-28');
   const [isEditing, setIsEditing] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    Promise.resolve().then(() => {
+      if (mounted) setIsMounted(true);
+    });
     async function loadDate() {
       const db = await getDB();
       const savedDate = await db.get('keyval', 'targetDate');
@@ -19,14 +23,12 @@ export function CountdownWidget() {
       }
     }
     loadDate();
+    return () => { mounted = false; };
   }, []);
 
-  useEffect(() => {
-    const today = new Date();
-    const target = parseISO(targetDate);
-    const diff = differenceInDays(target, today);
-    setDaysRemaining(diff);
-  }, [targetDate]);
+  const today = new Date();
+  const target = parseISO(targetDate);
+  const daysRemaining = isMounted ? differenceInDays(target, today) : null;
 
   const handleSave = async () => {
     setIsEditing(false);
