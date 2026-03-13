@@ -26,7 +26,7 @@ What’s next? 🛠️
 Visual Charts 📊 to help users visualize their progress and score trends over time.
 
 Here is the link to the application: https://ugcnet.vercel.app
-Check out the video for the demo (Full-screen recommended).
+Check out the [video demo](https://www.linkedin.com/posts/vinitgore_ugcnet-jrf-vibecoding-activity-7438267955429412865-zFhm?utm_source=share&utm_medium=member_desktop&rcm=ACoAACDVgToBmrNxwqIuqrRQtT7A1mwvbXijd3w) (Full-screen recommended).
 
 I’d love to hear your thoughts on this! If you're an aspirant or an ed-tech enthusiast, what more features do you think should be added to the roadmap? 💡
 
