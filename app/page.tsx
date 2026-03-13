@@ -6,6 +6,7 @@ import { BrainCircuit, Loader2, RefreshCw } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getSyllabusFlatList } from '@/lib/syllabus';
 import { cn } from '@/lib/utils';
+import { GoogleGenAI } from '@google/genai';
 
 export default function Home() {
   const [analysis, setAnalysis] = useState<string>('');
@@ -59,7 +60,6 @@ export default function Home() {
         return;
       }
 
-      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
 
       const prompt = `
@@ -86,9 +86,9 @@ export default function Home() {
         await db.put('keyval', response.text, 'ai-analysis');
         await db.put('keyval', today, 'ai-analysis-date');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setAnalysis('Failed to generate analysis. Please check your API key or try again later.');
+      setAnalysis(`Failed to generate analysis. Error: ${e.message || 'Unknown error'}. Please check your API key or try again later.`);
     } finally {
       setIsLoading(false);
     }
