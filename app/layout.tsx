@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Sidebar } from '@/components/sidebar';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
   title: 'UGC NET Prep Dashboard',
@@ -17,6 +18,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           {children}
         </main>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
