@@ -60,7 +60,8 @@ export default function CalendarPage() {
     const lastAt = journalContent.lastIndexOf('@', cursorPosition - 1);
     const before = journalContent.substring(0, lastAt);
     const after = journalContent.substring(cursorPosition);
-    const newContent = `${before}#${item.id} ${after}`;
+    const tagText = item.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const newContent = `${before}#${tagText} ${after}`;
     setJournalContent(newContent);
     setShowTagMenu(false);
   };
@@ -68,8 +69,22 @@ export default function CalendarPage() {
   const saveJournal = async () => {
     if (!journalContent.trim()) return;
 
-    // Extract tags (anything starting with #p1 or #p2)
-    const tags = Array.from(journalContent.matchAll(/#(p[12][\w-]*)/g)).map(m => m[1]);
+    // Extract tags (anything starting with #)
+    const extractedTags = Array.from(journalContent.matchAll(/#([a-zA-Z0-9_-]+)/g)).map(m => m[1]);
+    
+    const tags = extractedTags.map(tagText => {
+      // Try to match by formatted title
+      const matchedByTitle = flatSyllabus.find(s => 
+        s.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') === tagText
+      );
+      if (matchedByTitle) return matchedByTitle.id;
+      
+      // Fallback: check if it's already a valid ID (for legacy support)
+      const matchedById = flatSyllabus.find(s => s.id === tagText);
+      if (matchedById) return matchedById.id;
+      
+      return null;
+    }).filter(Boolean) as string[];
 
     const db = await getDB();
     await db.put('journal', {
@@ -190,15 +205,28 @@ export default function CalendarPage() {
               journalEntries.map(entry => (
                 <div key={entry.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                    {entry.content.split(/(#p[12][\w-]*)/g).map((part: string, i: number) => {
-                      if (part.startsWith('#p')) {
-                        const tagItem = flatSyllabus.find(s => s.id === part.substring(1));
-                        return (
-                          <span key={i} className="inline-flex items-center gap-1 rounded bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-800 mx-0.5">
-                            <Hash className="h-3 w-3" />
-                            {tagItem?.title || part}
-                          </span>
+                    {entry.content.split(/(#[a-zA-Z0-9_-]+)/g).map((part: string, i: number) => {
+                      if (part.startsWith('#')) {
+                        const tagText = part.substring(1);
+                        
+                        // Try to find by formatted title
+                        let tagItem = flatSyllabus.find(s => 
+                          s.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') === tagText
                         );
+                        
+                        // Fallback: try to find by ID (legacy support)
+                        if (!tagItem) {
+                          tagItem = flatSyllabus.find(s => s.id === tagText);
+                        }
+
+                        if (tagItem) {
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 rounded bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-800 mx-0.5">
+                              <Hash className="h-3 w-3" />
+                              {tagItem.title}
+                            </span>
+                          );
+                        }
                       }
                       return <span key={i}>{part}</span>;
                     })}

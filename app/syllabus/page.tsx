@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { getDB } from '@/lib/db';
 import { syllabus, SyllabusItem, getSyllabusFlatList } from '@/lib/syllabus';
 import { calculateConfidence, ConfidenceData } from '@/lib/calculations';
-import { ChevronRight, ChevronDown, CalendarPlus, Target, Hash } from 'lucide-react';
+import { ChevronRight, ChevronDown, CalendarPlus, Target, Hash, X, Edit2, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 export default function SyllabusPage() {
   const [confidenceMap, setConfidenceMap] = useState<Map<string, ConfidenceData>>(new Map());
   const [journalEntries, setJournalEntries] = useState<any[]>([]);
+  const [selectedTopicForJournal, setSelectedTopicForJournal] = useState<SyllabusItem | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -24,6 +25,16 @@ export default function SyllabusPage() {
     loadData();
   }, []);
 
+  const handleUpdateEntry = async (id: string, newContent: string) => {
+    const db = await getDB();
+    const entry = await db.get('journal', id);
+    if (entry) {
+      entry.content = newContent;
+      await db.put('journal', entry);
+      setJournalEntries(prev => prev.map(j => j.id === id ? { ...j, content: newContent } : j));
+    }
+  };
+
   return (
     <div className="h-full w-full max-w-5xl mx-auto">
       <div className="mb-8">
@@ -33,14 +44,125 @@ export default function SyllabusPage() {
       
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         {syllabus.map((item) => (
-          <SyllabusNode key={item.id} item={item} level={0} confidenceMap={confidenceMap} journalEntries={journalEntries} />
+          <SyllabusNode 
+            key={item.id} 
+            item={item} 
+            level={0} 
+            confidenceMap={confidenceMap} 
+            journalEntries={journalEntries}
+            onTopicClick={(item) => setSelectedTopicForJournal(item)}
+          />
         ))}
+      </div>
+
+      {selectedTopicForJournal && (
+        <JournalModal 
+          item={selectedTopicForJournal} 
+          onClose={() => setSelectedTopicForJournal(null)} 
+          journalEntries={journalEntries.filter(j => j.tags.includes(selectedTopicForJournal.id)).sort((a, b) => b.date - a.date)}
+          onUpdateEntry={handleUpdateEntry}
+        />
+      )}
+    </div>
+  );
+}
+
+function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: SyllabusItem, onClose: () => void, journalEntries: any[], onUpdateEntry: (id: string, content: string) => void }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+
+  const startEdit = (entry: any) => {
+    setEditingId(entry.id);
+    setEditContent(entry.content);
+  };
+
+  const saveEdit = (id: string) => {
+    onUpdateEntry(id, editContent);
+    setEditingId(null);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">{item.title}</h2>
+            <p className="text-sm text-slate-500 mt-1">Journal Entries</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
+          {journalEntries.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              No journal entries found for this topic.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {journalEntries.map(entry => {
+                const isEditable = Date.now() - entry.date <= 60 * 60 * 1000;
+                const isEditing = editingId === entry.id;
+                
+                return (
+                  <div key={entry.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <Clock className="h-3.5 w-3.5" />
+                        {format(entry.date, 'MMM d, yyyy - h:mm a')}
+                      </div>
+                      {isEditable && !isEditing && (
+                        <button 
+                          onClick={() => startEdit(entry)}
+                          className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition-colors"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                    
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <textarea 
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="w-full min-h-[100px] p-3 text-sm border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => setEditingId(null)}
+                            className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={() => saveEdit(entry.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Save Changes
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {entry.content}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function SyllabusNode({ item, level, confidenceMap, journalEntries }: { item: SyllabusItem; level: number; confidenceMap: Map<string, ConfidenceData>; journalEntries: any[] }) {
+function SyllabusNode({ item, level, confidenceMap, journalEntries, onTopicClick }: { item: SyllabusItem; level: number; confidenceMap: Map<string, ConfidenceData>; journalEntries: any[]; onTopicClick: (item: SyllabusItem) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusLevel, setFocusLevel] = useState<'low' | 'medium' | 'high' | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
@@ -128,13 +250,24 @@ function SyllabusNode({ item, level, confidenceMap, journalEntries }: { item: Sy
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    "font-medium text-slate-900",
+                    "font-medium text-slate-900 cursor-pointer hover:text-indigo-600 hover:underline transition-colors",
                     level === 0 && "text-lg font-bold",
                     level === 1 && "text-base font-semibold",
                     level === 2 && "text-sm text-slate-700"
-                  )}>
+                  )}
+                  onClick={() => onTopicClick(item)}
+                  >
                     {item.title}
                   </span>
+                  {relatedJournals.length > 0 && (
+                    <span 
+                      className="inline-flex items-center justify-center bg-indigo-100 text-indigo-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full cursor-pointer hover:bg-indigo-200 transition-colors"
+                      onClick={() => onTopicClick(item)}
+                      title={`${relatedJournals.length} journal entries`}
+                    >
+                      {relatedJournals.length}
+                    </span>
+                  )}
                   {confidence !== undefined && (
                     <span className="text-xs font-semibold text-slate-400">{Math.round(confidence)}%</span>
                   )}
@@ -204,26 +337,12 @@ function SyllabusNode({ item, level, confidenceMap, journalEntries }: { item: Sy
             </button>
           </div>
         )}
-
-        {relatedJournals.length > 0 && isOpen && (
-          <div className="mt-2 ml-8 space-y-2">
-            {relatedJournals.map(j => (
-              <div key={j.id} className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 flex items-start gap-2">
-                <Hash className="h-3 w-3 mt-0.5 text-indigo-400 shrink-0" />
-                <div>
-                  <span className="font-medium text-slate-900 mr-2">{format(j.date, 'MMM d, yyyy')}:</span>
-                  {j.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {isExpandable && isOpen && (
         <div className="flex flex-col gap-1">
           {item.children!.map((child) => (
-            <SyllabusNode key={child.id} item={child} level={level + 1} confidenceMap={confidenceMap} journalEntries={journalEntries} />
+            <SyllabusNode key={child.id} item={child} level={level + 1} confidenceMap={confidenceMap} journalEntries={journalEntries} onTopicClick={onTopicClick} />
           ))}
         </div>
       )}
