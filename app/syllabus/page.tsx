@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { getDB } from '@/lib/db';
 import { syllabus, SyllabusItem, getSyllabusFlatList } from '@/lib/syllabus';
 import { calculateConfidence, ConfidenceData } from '@/lib/calculations';
-import { ChevronRight, ChevronDown, CalendarPlus, Target, Hash, X, Edit2, Check, Clock } from 'lucide-react';
+import { ChevronRight, ChevronDown, CalendarPlus, Target, Hash, X, Edit2, Check, Clock, AtSign, Smile } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -30,8 +31,22 @@ export default function SyllabusPage() {
     const entry = await db.get('journal', id);
     if (entry) {
       entry.content = newContent;
+      
+      const flatSyllabus = getSyllabusFlatList();
+      const extractedTags = Array.from(newContent.matchAll(/@([a-zA-Z0-9_-]+)/g)).map(m => m[1]);
+      const tags = extractedTags.map(tagText => {
+        const matchedByTitle = flatSyllabus.find(s => 
+          s.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') === tagText
+        );
+        if (matchedByTitle) return matchedByTitle.id;
+        const matchedById = flatSyllabus.find(s => s.id === tagText);
+        if (matchedById) return matchedById.id;
+        return null;
+      }).filter(Boolean) as string[];
+      
+      entry.tags = tags;
       await db.put('journal', entry);
-      setJournalEntries(prev => prev.map(j => j.id === id ? { ...j, content: newContent } : j));
+      setJournalEntries(prev => prev.map(j => j.id === id ? { ...j, content: newContent, tags } : j));
     }
   };
 
@@ -70,15 +85,28 @@ export default function SyllabusPage() {
 function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: SyllabusItem, onClose: () => void, journalEntries: any[], onUpdateEntry: (id: string, content: string) => void }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const startEdit = (entry: any) => {
     setEditingId(entry.id);
     setEditContent(entry.content);
+    setCursorPosition(entry.content.length);
   };
 
   const saveEdit = (id: string) => {
     onUpdateEntry(id, editContent);
     setEditingId(null);
+    setShowEmojiPicker(false);
+  };
+
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    const before = editContent.substring(0, cursorPosition);
+    const after = editContent.substring(cursorPosition);
+    const newContent = before + emojiData.emoji + after;
+    setEditContent(newContent);
+    setCursorPosition(cursorPosition + emojiData.emoji.length);
+    setShowEmojiPicker(false);
   };
 
   return (
@@ -125,14 +153,39 @@ function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: 
                     
                     {isEditing ? (
                       <div className="space-y-3">
-                        <textarea 
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full min-h-[100px] p-3 text-sm border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y"
-                        />
+                        <div className="relative">
+                          <div className="absolute top-2 right-2 z-10">
+                            <button
+                              type="button"
+                              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                              title="Add Emoji"
+                            >
+                              <Smile className="h-4 w-4" />
+                            </button>
+                            {showEmojiPicker && (
+                              <div className="absolute right-0 top-8 z-50 shadow-xl rounded-xl border border-slate-200">
+                                <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
+                              </div>
+                            )}
+                          </div>
+                          <textarea 
+                            value={editContent}
+                            onChange={(e) => {
+                              setEditContent(e.target.value);
+                              setCursorPosition(e.target.selectionStart);
+                            }}
+                            onClick={(e) => setCursorPosition(e.currentTarget.selectionStart)}
+                            onKeyUp={(e) => setCursorPosition(e.currentTarget.selectionStart)}
+                            className="w-full min-h-[100px] p-3 pr-10 text-sm border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-y"
+                          />
+                        </div>
                         <div className="flex justify-end gap-2">
                           <button 
-                            onClick={() => setEditingId(null)}
+                            onClick={() => {
+                              setEditingId(null);
+                              setShowEmojiPicker(false);
+                            }}
                             className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
                           >
                             Cancel
@@ -148,7 +201,30 @@ function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: 
                       </div>
                     ) : (
                       <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                        {entry.content}
+                        {entry.content.split(/(@[a-zA-Z0-9_-]+)/g).map((part: string, i: number) => {
+                          if (part.startsWith('@')) {
+                            const tagText = part.substring(1);
+                            const flatSyllabus = getSyllabusFlatList();
+                            
+                            let tagItem = flatSyllabus.find(s => 
+                              s.title.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') === tagText
+                            );
+                            
+                            if (!tagItem) {
+                              tagItem = flatSyllabus.find(s => s.id === tagText);
+                            }
+
+                            if (tagItem) {
+                              return (
+                                <span key={i} className="inline-flex items-center gap-1 rounded bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-800 mx-0.5">
+                                  <AtSign className="h-3 w-3" />
+                                  {tagItem.title}
+                                </span>
+                              );
+                            }
+                          }
+                          return <span key={i}>{part}</span>;
+                        })}
                       </div>
                     )}
                   </div>
