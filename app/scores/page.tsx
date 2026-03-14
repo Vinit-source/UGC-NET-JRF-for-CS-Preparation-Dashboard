@@ -55,14 +55,14 @@ export default function ScoresPage() {
 
   return (
     <div className="h-full w-full max-w-5xl mx-auto">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Scores & Practice</h1>
           <p className="mt-2 text-slate-500">Log your test marks and track your performance.</p>
         </div>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors self-start md:self-auto"
         >
           <Plus className="h-4 w-4" />
           Add Score
@@ -144,23 +144,23 @@ export default function ScoresPage() {
               const item = flatSyllabus.find(i => i.id === s.targetId);
               const percentage = Math.round((s.score / s.maxScore) * 100);
               return (
-                <div key={s.id} className="flex items-center justify-between p-6 hover:bg-slate-50 transition-colors">
+                <div key={s.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-slate-50 transition-colors gap-4">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-xs font-medium uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full shrink-0">
                         {s.targetType}
                       </span>
                       <span className="text-sm text-slate-500">{format(s.date, 'MMM d, yyyy h:mm a')}</span>
                     </div>
                     <h4 className="font-medium text-slate-900">{item?.title || 'Unknown Topic'}</h4>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
+                  <div className="flex items-center gap-6 self-start md:self-auto">
+                    <div className="text-left md:text-right">
                       <div className="text-2xl font-bold text-slate-900">
                         {s.score} <span className="text-sm font-normal text-slate-500">/ {s.maxScore}</span>
                       </div>
                     </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700">
                       {percentage}%
                     </div>
                   </div>
