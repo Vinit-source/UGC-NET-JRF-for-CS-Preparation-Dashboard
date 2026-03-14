@@ -7,6 +7,9 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 export const metadata: Metadata = {
   title: 'UGC NET Prep Dashboard',
   description: 'Preparation dashboard for UGC NET JRF examination',
+  icons: {
+    icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsOHReqhtyAaBeHuSxjVVOTZ_yTZdqWerR5A&s',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
