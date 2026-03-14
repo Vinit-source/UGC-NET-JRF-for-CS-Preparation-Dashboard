@@ -37,7 +37,7 @@ export function CountdownWidget() {
   };
 
   return (
-    <div className="absolute right-8 top-8 flex flex-col items-end rounded-2xl bg-indigo-50 p-6 shadow-sm border border-indigo-100">
+    <div className="relative md:absolute md:right-8 md:top-8 flex flex-col items-start md:items-end rounded-2xl bg-indigo-50 p-6 shadow-sm border border-indigo-100 mb-8 md:mb-0">
       <div className="flex items-center gap-2 text-indigo-600 mb-2">
         <CalendarIcon className="h-5 w-5" />
         <span className="font-medium">UGC NET JRF Exam</span>

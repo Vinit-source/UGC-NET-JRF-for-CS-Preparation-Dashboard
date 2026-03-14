@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CountdownWidget } from '@/components/countdown-widget';
+import { ScoreTrendsChart } from '@/components/score-trends-chart';
 import { BrainCircuit, Loader2, RefreshCw } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getSyllabusFlatList } from '@/lib/syllabus';
@@ -108,6 +109,8 @@ export default function Home() {
       <CountdownWidget />
 
       <div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <ScoreTrendsChart />
+        
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
