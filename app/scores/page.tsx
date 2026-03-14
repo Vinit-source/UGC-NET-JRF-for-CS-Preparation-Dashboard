@@ -24,6 +24,7 @@ export default function ScoresPage() {
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasScores, setHasScores] = useState(false);
+  const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>('all');
 
   const loadScores = async () => {
     const db = await getDB();
@@ -148,7 +149,19 @@ export default function ScoresPage() {
     return {
       date: format(s.date, 'MMM d'),
       percentage: Math.round((s.score / s.maxScore) * 100),
-      topic: item?.title || 'Unknown'
+      topic: item?.title || 'Unknown',
+      targetId: s.targetId
+    };
+  });
+
+  const filteredTrendData = selectedTopicFilter === 'all' 
+    ? trendData 
+    : trendData.filter(d => d.targetId === selectedTopicFilter);
+
+  const uniqueTopicsForFilter = Array.from(new Set(trendData.map(d => d.targetId))).map(id => {
+    return {
+      id,
+      title: trendData.find(d => d.targetId === id)?.topic || 'Unknown'
     };
   });
 
@@ -298,17 +311,41 @@ export default function ScoresPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="flex flex-col gap-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="font-semibold text-slate-900 mb-6">Score Trends Over Time</h3>
-            {trendData.length > 0 ? (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 className="font-semibold text-slate-900">Score Trends Over Time</h3>
+              <select
+                value={selectedTopicFilter}
+                onChange={(e) => setSelectedTopicFilter(e.target.value)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 max-w-[200px]"
+              >
+                <option value="all">All Topics</option>
+                {uniqueTopicsForFilter.map(topic => (
+                  <option key={topic.id} value={topic.id}>
+                    {topic.title.length > 30 ? topic.title.substring(0, 30) + '...' : topic.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {filteredTrendData.length > 0 ? (
               <div className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <LineChart data={filteredTrendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} domain={[0, 100]} />
                     <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      labelStyle={{ color: '#64748b', marginBottom: '4px' }}
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-lg">
+                              <p className="font-medium text-slate-900 text-sm mb-1">{label}</p>
+                              <p className="text-slate-600 text-xs mb-2">{payload[0].payload.topic}</p>
+                              <p className="text-indigo-600 font-bold">Score: {payload[0].value}%</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
                     <Line type="monotone" dataKey="percentage" name="Score %" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4, fill: '#4f46e5', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>

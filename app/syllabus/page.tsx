@@ -58,7 +58,6 @@ export default function SyllabusPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Syllabus Tracker</h1>
           <p className="mt-2 text-slate-500">Track your progress and focus areas across the entire syllabus.</p>
         </div>
-        <CountdownWidget />
       </div>
       
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

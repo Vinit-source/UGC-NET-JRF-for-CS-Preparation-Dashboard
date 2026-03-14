@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getDB } from '@/lib/db';
 import { differenceInDays, parseISO, format } from 'date-fns';
-import { Target, Edit2, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, Edit2, Check } from 'lucide-react';
 
 export function CountdownWidget() {
   const [targetDate, setTargetDate] = useState<string>('2026-06-28');
@@ -37,9 +37,22 @@ export function CountdownWidget() {
   };
 
   return (
-    <div className="flex flex-col items-start md:items-end rounded-2xl bg-indigo-50 p-6 shadow-sm border border-indigo-100 w-full md:w-auto">
-      <div className="group flex items-center gap-2 text-indigo-600 mb-2">
-        <Target className="h-5 w-5 shrink-0" />
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f2f5ff] p-6 shadow-sm border border-indigo-50 w-full h-full">
+      <div className="flex items-center gap-2 text-indigo-600 mb-4">
+        <CalendarIcon className="h-5 w-5 shrink-0" />
+        <span className="font-medium text-base">
+          UGC NET JRF Exam
+        </span>
+      </div>
+      
+      <div className="text-6xl font-black tracking-tighter text-indigo-900 mb-1">
+        {daysRemaining !== null ? Math.max(0, daysRemaining) : '...'}
+      </div>
+      <div className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-4">
+        Days Remaining
+      </div>
+
+      <div className="group flex items-center gap-2 text-indigo-600 mt-auto">
         {isEditing ? (
           <div className="flex items-center gap-2">
             <input
@@ -57,8 +70,8 @@ export function CountdownWidget() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm md:text-base">
-              UGC NET JRF Exam - {format(parseISO(targetDate), 'MMM d, yyyy')}
+            <span className="text-sm">
+              Target: {format(parseISO(targetDate), 'MMM d, yyyy')}
             </span>
             <button
               onClick={() => setIsEditing(true)}
@@ -68,13 +81,6 @@ export function CountdownWidget() {
             </button>
           </div>
         )}
-      </div>
-      
-      <div className="text-5xl font-black tracking-tighter text-indigo-900 mb-1">
-        {daysRemaining !== null ? Math.max(0, daysRemaining) : '...'}
-      </div>
-      <div className="text-sm font-medium text-indigo-500 uppercase tracking-widest">
-        Days Remaining
       </div>
     </div>
   );
