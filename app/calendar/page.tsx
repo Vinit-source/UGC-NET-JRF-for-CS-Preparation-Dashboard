@@ -23,6 +23,14 @@ export default function CalendarPage() {
   const [editContent, setEditContent] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [now, setNow] = useState<number>(0);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadData = async (date: Date) => {
     const db = await getDB();
@@ -274,7 +282,7 @@ export default function CalendarPage() {
               </div>
             ) : (
               journalEntries.map(entry => {
-                const isEditable = Date.now() - entry.date <= 60 * 60 * 1000;
+                const isEditable = now > 0 && now - entry.date <= 60 * 60 * 1000;
                 const isEditing = editingId === entry.id;
                 
                 return (

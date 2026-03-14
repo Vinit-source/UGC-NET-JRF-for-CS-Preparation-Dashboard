@@ -8,6 +8,7 @@ import { ChevronRight, ChevronDown, CalendarPlus, Target, Hash, X, Edit2, Check,
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { CountdownWidget } from '@/components/countdown-widget';
 
 export default function SyllabusPage() {
   const [confidenceMap, setConfidenceMap] = useState<Map<string, ConfidenceData>>(new Map());
@@ -52,9 +53,12 @@ export default function SyllabusPage() {
 
   return (
     <div className="h-full w-full max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900">Syllabus Tracker</h1>
-        <p className="mt-2 text-slate-500">Track your progress and focus areas across the entire syllabus.</p>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Syllabus Tracker</h1>
+          <p className="mt-2 text-slate-500">Track your progress and focus areas across the entire syllabus.</p>
+        </div>
+        <CountdownWidget />
       </div>
       
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -87,6 +91,14 @@ function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: 
   const [editContent, setEditContent] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [now, setNow] = useState<number>(0);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const startEdit = (entry: any) => {
     setEditingId(entry.id);
@@ -130,7 +142,7 @@ function JournalModal({ item, onClose, journalEntries, onUpdateEntry }: { item: 
           ) : (
             <div className="space-y-4">
               {journalEntries.map(entry => {
-                const isEditable = Date.now() - entry.date <= 60 * 60 * 1000;
+                const isEditable = now > 0 && now - entry.date <= 60 * 60 * 1000;
                 const isEditing = editingId === entry.id;
                 
                 return (
@@ -311,8 +323,8 @@ function SyllabusNode({ item, level, confidenceMap, journalEntries, onTopicClick
   return (
     <div className={cn("flex flex-col", level > 0 && "ml-6 mt-2 border-l-2 border-slate-100 pl-4")}>
       <div className="group flex flex-col py-2 hover:bg-slate-50 rounded-lg px-2 -ml-2 transition-colors">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <div className="flex items-start md:items-center gap-2 flex-1">
             {isExpandable ? (
               <button onClick={toggleOpen} className="p-1 text-slate-400 hover:text-slate-900 transition-colors">
                 {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -362,7 +374,7 @@ function SyllabusNode({ item, level, confidenceMap, journalEntries, onTopicClick
             </div>
           </div>
 
-          <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-2 md:gap-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity mt-2 md:mt-0 flex-wrap">
             <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1">
               <button
                 onClick={() => handleFocusChange('low')}

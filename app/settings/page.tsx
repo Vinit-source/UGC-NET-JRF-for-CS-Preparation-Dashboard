@@ -15,6 +15,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const savedKey = localStorage.getItem('GEMINI_API_KEY_PRIMARY');
     if (savedKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setApiKey(savedKey);
     }
   }, []);
@@ -141,7 +142,7 @@ export default function SettingsPage() {
           </h2>
           <p className="text-sm text-slate-600 mb-4 leading-relaxed">
             To use the AI Analysis feature, you need to provide your own Google Gemini API key. 
-            Your key is stored securely in your browser's local storage and is never sent to our servers.
+            Your key is stored securely in your browser&apos;s local storage and is never sent to our servers.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3">

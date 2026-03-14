@@ -42,6 +42,7 @@ export function SearchSelect({ options, value, onChange, placeholder = 'Search..
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHighlightedIndex(0);
   }, [query]);
 
